@@ -185,17 +185,34 @@
       font-size: 14px;
     `;
 
-    const rows = getStatementRows();
-
     const title = document.createElement('div');
-    title.textContent = `Fidelity Statement Downloader`;
+    title.textContent = 'Fidelity Statement Downloader';
     title.style.cssText = 'font-size: 16px; font-weight: 600; margin-bottom: 8px;';
     panel.appendChild(title);
 
     const info = document.createElement('div');
-    info.textContent = `Found ${rows.length} statements on the page`;
-    info.style.cssText = 'color: #aaa; margin-bottom: 16px;';
+    info.style.cssText = 'color: #aaa; margin-bottom: 4px;';
     panel.appendChild(info);
+
+    const dateRange = document.createElement('div');
+    dateRange.style.cssText = 'color: #aaa; margin-bottom: 16px; font-size: 12px;';
+    panel.appendChild(dateRange);
+
+    function refreshInfo() {
+      const rows = getStatementRows();
+      const years = new Set();
+      rows.forEach((row) => {
+        const label = row.querySelectorAll('td')[0]?.getAttribute('aria-label') || row.querySelectorAll('td')[0]?.textContent || '';
+        const m = label.match(/(\d{4})/);
+        if (m) years.add(m[1]);
+      });
+      const sorted = Array.from(years).sort();
+      info.textContent = `Found ${rows.length} statements on the page`;
+      dateRange.textContent = sorted.length > 0
+        ? `Date range: ${sorted[0]}${sorted.length > 1 ? ' \u2013 ' + sorted[sorted.length - 1] : ''}`
+        : '';
+    }
+    refreshInfo();
 
     const status = document.createElement('div');
     status.id = 'fidelity-dl-status';
@@ -226,8 +243,20 @@
     cancelBtn.onmouseover = () => (cancelBtn.style.background = '#c82333');
     cancelBtn.onmouseout = () => (cancelBtn.style.background = '#dc3545');
 
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = '\u21BB';
+    refreshBtn.title = 'Re-scan page for statements';
+    refreshBtn.style.cssText = `
+      position: absolute; top: 8px; right: 36px; background: none;
+      border: none; color: #888; font-size: 18px; cursor: pointer;
+    `;
+    refreshBtn.onclick = () => {
+      refreshInfo();
+      status.textContent = 'Page re-scanned.';
+    };
+
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
+    closeBtn.textContent = '\u2715';
     closeBtn.style.cssText = `
       position: absolute; top: 8px; right: 12px; background: none;
       border: none; color: #888; font-size: 18px; cursor: pointer;
@@ -277,6 +306,7 @@
     btnRow.appendChild(dlBtn);
     btnRow.appendChild(cancelBtn);
     panel.appendChild(btnRow);
+    panel.appendChild(refreshBtn);
     panel.appendChild(closeBtn);
 
     document.body.appendChild(panel);
